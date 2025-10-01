@@ -17,9 +17,6 @@ var app = builder.Build();
 // app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
-// app.Urls.Add("http://0.0.0.0:8080");
-// app.Urls.Add("http://0.0.0.0:5000");
-// app.Urls.Add("http://localhost:5000");
 
 app.UseAuthorization();
 
