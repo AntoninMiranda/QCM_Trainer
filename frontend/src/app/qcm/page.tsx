@@ -7,12 +7,6 @@ import { getData } from "@/api";
 import { Card, CardHeader, CardContent, CardAction, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-type QuestionType = {
-    id: number;
-    question: string;
-    choices: Record<string, string>;
-    answer: string;
-};
 
 function QuestionModule({ question, selected, setSelected, validated, onValidate, onNext }: {
     question: any;
@@ -22,8 +16,6 @@ function QuestionModule({ question, selected, setSelected, validated, onValidate
     onValidate: () => void;
     onNext: () => void;
 }) {
-
-
     if (!question) return <Card><CardContent>Aucune question</CardContent></Card>;
     return (
         <Card className="w-full max-w-xl">
@@ -32,7 +24,7 @@ function QuestionModule({ question, selected, setSelected, validated, onValidate
             </CardHeader>
             <CardAction>
                 {Object.entries(question.choices).map(([key, value]) => {
-                    let variant = "outline";
+                    let variant: "link" | "outline" | "success" | "destructive" | "default" | "secondary" | "ghost" | undefined = "outline";
                     if (validated) {
                         if (key === question.answer) variant = "success";
                         else if (key === selected) variant = "destructive";
@@ -46,7 +38,7 @@ function QuestionModule({ question, selected, setSelected, validated, onValidate
                             onClick={() => !validated && setSelected(key)}
                             className={validated ? "pointer-events-none" : ""}
                         >
-                            {key} : {value}
+                            {key} : {String(value)}
                         </Button>
                     );
                 })}
@@ -76,6 +68,7 @@ export default function QcmPage() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selected, setSelected] = useState<string | null>(null);
     const [validated, setValidated] = useState(false);
+    const [result, setResult] = useState<{ score: number; total: number }>({ score: 0, total: 0 });
     const router = useRouter();
     const searchParams = useSearchParams();
     const nbQuestions = searchParams.get("nbQuestions") || "5";
@@ -85,16 +78,24 @@ export default function QcmPage() {
             .then((res) => setData(res))
             .catch((err) => setError(err.message));
     }, [nbQuestions]);
+    useEffect(() => {
+        setResult({ score: 0, total: Number(nbQuestions) });
+    }, [nbQuestions]);
 
     const nextQuestion = () => {
         if (currentIndex + 1 >= data.length) {
-            router.push("/");
+            router.push(`/qcm/result?score=${result.score}&total=${result.total}`);
         } else {
             setCurrentIndex((prev) => prev + 1);
         }
     };
 
-    const handleValidate = () => setValidated(true);
+    const handleValidate = () => {
+        setValidated(true);
+        if (selected === data[currentIndex].answer) {
+            setResult(prev => ({ score: prev.score + 1, total: prev.total }));
+        }
+    };
     const handleNext = () => {
         setValidated(false);
         setSelected(null);
