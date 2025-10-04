@@ -1,6 +1,10 @@
 ﻿namespace WebApplication1.Models;
 
-public class Qcm
+public class QcmCategorie
+{
+    public List<QcmQuestion> Categorie { get; set; }
+}
+public class QcmQuestion
 {
     public int Id { get; set; }
     public string Question { get; set; }

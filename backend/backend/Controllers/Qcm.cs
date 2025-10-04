@@ -9,22 +9,35 @@ namespace WebApplication1.Controllers;
 [Route("[controller]")]
 public class QcmController : ControllerBase
 {
-    [HttpGet("{count}")]
-    public IActionResult Get(int count)
+    [HttpGet]
+    public IActionResult Get([FromQuery] string type, [FromQuery] string? categorie = null, [FromQuery] int? count = null)
     {
-        var jsonPath = "Data/Anatomie.json";
+        if (string.IsNullOrEmpty(type))
+            return BadRequest("Le paramètre 'type' est requis.");
+
+        var jsonPath = $"Data/{type}.json";
         if (!System.IO.File.Exists(jsonPath))
             return NotFound("Fichier JSON non trouvé.");
 
         var json = System.IO.File.ReadAllText(jsonPath);
-        var questions = JsonSerializer.Deserialize<List<Qcm>>(json);
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var data = JsonSerializer.Deserialize<Dictionary<string, List<QcmQuestion>>>(json, options);
 
-        if (questions == null || questions.Count == 0)
+        if (data == null || data.Count == 0)
             return NotFound("Aucune question disponible.");
 
-        var random = new Random();
-        var selected = questions.OrderBy(x => random.Next()).Take(count).ToList();
+        List<QcmQuestion> questions;
+        if (!string.IsNullOrEmpty(categorie) && data.ContainsKey(categorie))
+            questions = data[categorie];
+        else
+            questions = data.Values.SelectMany(q => q).ToList();
 
-        return Ok(selected);
+        if (questions.Count == 0)
+            return NotFound("Aucune question pour cette catégorie.");
+
+        if (count.HasValue && count.Value > 0)
+            questions = questions.OrderBy(x => Guid.NewGuid()).Take(count.Value).ToList();
+
+        return Ok(questions);
     }
 }
